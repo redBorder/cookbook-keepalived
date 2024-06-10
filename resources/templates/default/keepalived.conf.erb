@@ -1,0 +1,208 @@
+! Configuration File for keepalived
+
+#######################################################
+#              Global Notifications
+#######################################################
+
+global_defs {
+    notification_email {
+        root
+    }
+    notification_email_from redborder
+    router_id redborder_manager_cluster
+    script_user keepalived
+    enable_script_security
+}
+
+
+#######################################################
+#                   VRRP Groups
+#######################################################
+
+<% if @has_any_virtual_ip %>
+<% @virtual_ips_per_ip.each do |ip,services| %>
+<% tmp = services.map{|x| x["service"]} %>
+<% if services.select{|x| x["enable"]}.size>0 %>
+vrrp_sync_group vg_<%= ip %>_<%= tmp.join("_") %> {
+    group {
+        vi_<%= ip %>
+    }
+}
+<% end %>
+<% end %>
+
+#######################################################
+#                   VRRP Ips
+#######################################################
+
+<% index=0  %>
+<% @virtual_ips_per_ip.each do |ip,services| %>
+<% index=index+1  %>
+<% if services.select{|x| x["enable"]}.size>0 %>
+vrrp_instance vi_<%= ip %> {
+<% iface=services.select{|x| x["enable"]}.first["iface"] %>
+    state BACKUP
+    interface <%= iface %>
+    virtual_router_id <%= ((@start_id.nil? ? 111 : @start_id.to_i) + index).to_s  %>
+    priority <%= ( services.select{ |x| x["service"]=="postgresql" }.nil? ? "100" : (File.exists?("/opt/rb/var/pgdata/postgresql.conf") ? "100" : "50" ) ) %>
+    advert_int 1
+    nopreempt
+<% if !node["redborder"].nil? and !node["redborder"]["dmidecode"].nil? and !node["redborder"]["dmidecode"]["manufacturer"].nil? and node["redborder"]["dmidecode"]["manufacturer"].to_s.downcase == "xen" %>
+<% serviceonip=services.select{|x| x["enable"] and x["ip"]==ip}.map{|x| x["service"]}.sort.uniq 
+   managersunicy=nil
+   managerswithip=[] 
+   serviceonip.each do |x|
+     if !@managers_per_service[x].nil?
+       @managers_per_service[x].each do |m|
+         ipaddr=nil
+         if !m["network"].nil? and !m["network"]["interfaces"].nil? and !m["network"]["interfaces"][iface].nil?
+            unless m["network"]["interfaces"][iface]["addresses"].nil?
+               m["network"]["interfaces"][iface]["addresses"].each do |ipa, ip_prop|
+                  if ip_prop["family"]=="inet" and ipa!=ip
+                     ipaddr=ipa
+                     break
+                  end
+               end
+            end
+         end
+         if !ipaddr.nil?
+           if m.name!=node.name
+             managerswithip<<ipaddr if !managerswithip.include?(ipaddr)
+           else
+             managersunicy=ipaddr
+           end
+         end
+       end
+     end
+   end %>
+<% if managerswithip.size>0 and !managersunicy.nil? %>
+    unicast_src_ip <%= managersunicy %>
+<% end %>
+    unicast_peer {
+<% managerswithip.each do |m| %>
+        <%= m %>
+<% end %>
+    }
+<% end %>
+    authentication {
+        auth_type PASS
+        auth_pass <%= (@vrrp_password.nil? or @vrrp_password=="") ?  "redborder" : @vrrp_password %>
+    }
+    virtual_ipaddress {
+        <%= ip %>/32
+    }
+}
+<% end %>
+<% end %>
+<% end %>
+
+#######################################################
+#                  Balanced Ips
+#######################################################
+
+<% ips_processed={} %>
+<% external_vip  = @virtual_ips["external"] %>
+<% @balanced_services.each do |balance| %>
+# <%= balance[:service] %> - <%= balance[:port] %> (<%= balance[:name] %>) <% if external_vip[balance["service"]].nil? or external_vip[balance["service"]]["ip"].nil? %>- has no valid virtual ip address
+<% elsif (!external_vip[balance["service"]]["enable"] or !@manager_services[balance["service"]]) and (@virtual_ips_per_ip[external_vip[balance["service"]]["ip"]].nil?) %>- has the service disable and it has not the virtual ip addess <%= external_vip[balance["service"]]["ip"] %> 
+<% elsif !ips_processed["#{external_vip[balance["service"]]["ip"]}:#{balance[:port]}"].nil? %>- has already been created
+<% elsif !@manager_services[balance["service"]] %>- the service is disabled
+<% else %>
+<% managers_enabled=0 %>
+<% keepalived_enabled=false %>
+<% @managers.each do |m| %>
+<% service_enabled=m["redborder"]["manager"]["services"]["current"][balance[:redirected_service]] if !m["redborder"]["manager"]["services"]["current"].nil? %>
+<% service_enabled=true if (service_enabled!=true and service_enabled!=false) %>
+<% if balance[:port]==443 %>
+<% keepalived_enabled=m["redborder"]["manager"]["services"]["current"]["keepalived"] if (!m["redborder"]["manager"]["services"]["current"].nil? and keepalived_enabled==false) %>
+<% keepalived_enabled=true if (keepalived_enabled!=true and keepalived_enabled!=false) %>
+<% else %>
+<% keepalived_enabled=true %>
+<% end %>
+<% if service_enabled and keepalived_enabled %>
+<% managers_enabled=managers_enabled+1 %>
+<% end %>
+<% end %>
+<% if external_vip[balance["service"]]["ip"]==@ipmgt or external_vip[balance["service"]]["ip"]==@ipsync %>
+- the service is enabled but it cannot be balanced on physical ip 
+<% elsif managers_enabled<=1 %>
+- the service is enabled but there is only one active node so load balancing is not necessary (<%= managers_enabled %>)
+<% elsif external_vip[balance["service"]]["loadbalance"] %>
+<% ips_processed["#{external_vip[balance["service"]]["ip"]}:#{balance[:port]}"]=true %>
+
+virtual_server <%= external_vip[balance["service"]]["ip"] %> <%= balance[:port] %> {
+    delay_loop 5
+<% if balance[:protocol] == "udp" %>
+    #lvs_sched  ops
+    lvs_sched wlc
+<% else %>
+    lvs_sched  rr
+    persistence_timeout <%= balance[:persistence_timeout] %>
+<% end %>
+    lvs_method DR
+    protocol   <%= balance[:protocol].upcase %>
+    virtualhost <%= external_vip[balance["service"]]["ip"] %>
+
+    # Managers: (<%= @managers.size %>)
+<% @managers.each do |m| %>
+<% service_enabled=m["redborder"]["manager"]["services"]["current"][balance[:redirected_service]] if !m["redborder"]["manager"]["services"]["current"].nil? %>
+<% service_enabled=true if (service_enabled!=true and service_enabled!=false) %>
+<% if balance[:port]==443 %>
+<% keepalived_enabled=m["redborder"]["manager"]["services"]["current"]["keepalived"] if !m["redborder"]["manager"]["services"]["current"].nil? %>
+<% keepalived_enabled=true if (keepalived_enabled!=true and keepalived_enabled!=false) %>
+<% else %>
+<% keepalived_enabled=true %>
+<% end %>
+<% if service_enabled and keepalived_enabled %>
+    # <%= m.name %>
+<% ipaddr=nil
+   m["network"]["interfaces"].each do |iface, v|
+       unless m["network"]["interfaces"][iface]["addresses"].nil?
+           m["network"]["interfaces"][iface]["addresses"].each do |ip, ip_prop|
+               if ip_prop["family"]=="inet" and ip!=external_vip[balance["service"]]["ip"]
+                   #check if it belongs to the same network
+                   net_iface=NetAddr::CIDR.create("#{ip}/#{ip_prop["prefixlen"]}").to_s
+                   net_virtual=NetAddr::CIDR.create("#{external_vip[balance["service"]]["ip"]}/#{ip_prop["prefixlen"]}").to_s
+
+                   if net_virtual==net_iface
+                       ipaddr=ip
+                       break
+                   end
+               end
+           end
+       end
+   end %>
+<% if !ipaddr.nil? %>
+    real_server <%= ipaddr %> <%= balance[:port] %> {
+        weight <%= (!m["cpu"].nil? and m["cpu"]["total"].to_i>0) ? m["cpu"]["total"].to_i : 1 %>
+<% if balance[:protocol]!="udp" %>        
+        TCP_CHECK { 
+            connect_timeout 10
+            connect_port <%= balance[:port] %>
+        } 
+<% if m.name!=node.name %>
+        MISC_CHECK {
+            #connect_timeout 10
+            misc_timeout 10
+            misc_path "/usr/lib/redborder/bin/rb_checkping.sh <%= m.name %>"
+        }
+<% end %>
+<% else %>
+        MISC_CHECK {
+            #connect_timeout 10
+            misc_timeout 10
+            misc_path "/usr/lib/redborder/bin/rb_checkudp.sh <%= ipaddr %> <%= balance[:port] %>"
+        }
+<% end %>
+    }
+<% else %>
+    # <%= m.name %> cannot find phisical ipaddress
+<% end %>
+<% else %>
+    # <%= m.name %> has the service <%= balance[:redirected_service] %> <%= (service_enabled ? "enabled" : "disabled") %><%= ((service_enabled and !keepalived_enabled) ? " but keepalived is disabled" : "") %> 
+<% end %>
+<% end %>
+}
+<% end %>
+<% end %>
+<% end %>

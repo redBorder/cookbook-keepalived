@@ -86,7 +86,7 @@ action :add do
       action [:start, :enable]
     end
 
-    Chef::Log.info('keepalvied cookbook has been processed')
+    Chef::Log.info('keepalived cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
   end
@@ -100,7 +100,7 @@ action :remove do
       action :stop
     end
 
-    Chef::Log.info('keepalives cookbook has been processed')
+    Chef::Log.info('keepalived cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
   end

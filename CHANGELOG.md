@@ -1,5 +1,12 @@
 cookbook-keepalived CHANGELOG
-=============================
+===============
+
+## 0.0.2
+
+  - Miguel Negron
+    - [09d3ee9] add keepalived logs
+    - [0bb11e1] Update rpm.yml
+    - [e95a3aa] Update README
 
 This file is used to list changes made in each version of the ntp cookbook.
 

@@ -40,7 +40,7 @@ action :add do
       notifies :reload, 'service[keepalived]', :delayed
     end
 
-    if !virtual_ips['external']['webui']['ip'].nil?
+    unless virtual_ips['external']['webui']['ip'].nil?
       template '/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
@@ -49,7 +49,7 @@ action :add do
         mode '0755'
         retries 2
         variables(vip: virtual_ips['external']['webui']['ip'])
-      end    
+      end
 
       template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh' do
         cookbook 'keepalived'
@@ -59,9 +59,9 @@ action :add do
         mode '0755'
         retries 2
         variables(vip: virtual_ips['external']['webui']['ip'])
-      end    
+      end
     end
-    
+
     template '/etc/keepalived/keepalived.conf' do
       cookbook 'keepalived'
       source 'keepalived.conf.erb'

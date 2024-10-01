@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if hostname -I | grep -q <%= @vip %>; then
+    iptables -t nat -D PREROUTING -d <%= @vip %> -j REDIRECT &>/dev/null
+else
+    if ! iptables -t nat -C PREROUTING -d <%= @vip %> -j REDIRECT 2>/dev/null; then
+        iptables -t nat -A PREROUTING -d <%= @vip %> -j REDIRECT
+    fi
+fi

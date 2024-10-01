@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.1.0
+
+  - David Vanhoucke
+    - [cfd2c8a] trigger notify scripts to add or remove iptables rules
+
 ## 0.0.2
 
   - Miguel Negron

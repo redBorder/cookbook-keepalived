@@ -16,6 +16,7 @@ action :add do
     manager_services = new_resource.manager_services
     ipmgt = new_resource.ipmgt
     iface = new_resource.iface_management
+    iface_sync = new_resource.iface_sync
     ipaddress_sync = new_resource.ipaddress_sync
     managers_per_service = new_resource.managers_per_service
 
@@ -70,7 +71,7 @@ action :add do
       mode '0644'
       retries 2
       notifies :reload, 'service[keepalived]'
-      variables(vrrp_password: vrrp_secrets['pass'], managers: managers, start_id: vrrp_secrets['start_id'], balanced_services: balanced_services, virtual_ips: virtual_ips, virtual_ips_per_ip: virtual_ips_per_ip, has_any_virtual_ip: has_any_virtual_ip, manager_services: manager_services, ipmgt: ipmgt, iface: iface, ipsync: ipaddress_sync, managers_per_service: managers_per_service)
+      variables(vrrp_password: vrrp_secrets['pass'], managers: managers, start_id: vrrp_secrets['start_id'], balanced_services: balanced_services, virtual_ips: virtual_ips, virtual_ips_per_ip: virtual_ips_per_ip, has_any_virtual_ip: has_any_virtual_ip, manager_services: manager_services, ipmgt: ipmgt, iface: iface, ipsync: ipaddress_sync, managers_per_service: managers_per_service, iface_sync: iface_sync)
     end
 
     ips_added = {}

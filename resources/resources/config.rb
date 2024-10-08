@@ -18,6 +18,5 @@ attribute :has_any_virtual_ip, kind_of: [TrueClass, FalseClass], default: false
 attribute :manager_services, kind_of: Hash, default: {}
 attribute :ipmgt, kind_of: String, default: '127.0.0.1'
 attribute :iface_management, kind_of: String, default: ''
-attribute :iface_sync, kind_of: String, default: ''
 attribute :ipaddress_sync, kind_of: String, default: '127.0.0.1'
 attribute :managers_per_service, kind_of: Hash, default: {}

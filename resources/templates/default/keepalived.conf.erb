@@ -36,17 +36,13 @@ vrrp_sync_group vg_<%= ip %>_<%= tmp.join("_") %> {
 #######################################################
 
 <% index=0  %>
-<% sync_iface = `ip -o addr show | grep #{@ipsync} | awk '{print $2}'`.strip %>
-<% internal_services = @virtual_ips["internal"] %>
 <% @virtual_ips_per_ip.each do |ip,services| %>
 <% index=index+1  %>
 <% if services.select{|x| x["enable"]}.size>0 %>
 vrrp_instance vi_<%= ip %> {
+<% iface=services.select{|x| x["enable"]}.first["iface"] %>
     state BACKUP
-    <% services.each do |service| %>
-        <% iface = internal_services.key?(service["service"]) ? sync_iface : service["iface"] %>
     interface <%= iface %>
-    <% end %>
     virtual_router_id <%= ((@start_id.nil? ? 111 : @start_id.to_i) + index).to_s  %>
     priority <%= 50+@managers.size-@managers.index { |m| m.name == node.name } %>
     advert_int 1

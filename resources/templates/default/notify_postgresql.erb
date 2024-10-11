@@ -66,8 +66,6 @@ else
 fi
 
 IS_RECOVERY=$(sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r')
-
-# Check the result and print the appropriate message
 if [ "$IS_RECOVERY" == "t" ]; then
   echo "The database is in recovery mode (Read-Only)."
 else

@@ -1,0 +1,79 @@
+#!/bin/bash
+
+IP_VIRTUAL=<%= @vip %>
+IFACE=<%= @iface %> 
+KEEPALIVED_CONF="/etc/keepalived/keepalived.conf"
+
+echo "Entering rb_notify_master_postgresql script with VIP: $IP_VIRTUAL"
+
+################################
+# checking status section
+################################
+
+grep "vrrp_sync_group vg_${IP_VIRTUAL}_postgresql {" $KEEPALIVED_CONF > /dev/null
+
+if [ $? -eq 0 ]; then
+  echo "The virtual IP $IP_VIRTUAL is registered in the vrrp_sync_group."
+else
+  echo "Error: The virtual IP $IP_VIRTUAL is not registered in vrrp_sync_group."
+  exit 1
+fi
+
+IP_ASSIGNED_IFACE=$(ip -o addr show | grep $IP_VIRTUAL | awk '{print $2}')
+
+if [ "$IP_ASSIGNED_IFACE" == "$IFACE" ]; then
+  echo "The virtual IP $IP_VIRTUAL is correctly assigned to the interface $IFACE."
+else
+  echo "Error: Virtual IP $IP_VIRTUAL is not assigned to the interface $IFACE."
+  exit 1
+fi
+
+SERF_OUTPUT=$(serf members -format=json -status=alive)
+MEMBER_COUNT=$(echo "$SERF_OUTPUT" | jq '.members | length')
+
+if [ "$MEMBER_COUNT" -gt 1 ]; then
+  echo "The cluster has $MEMBER_COUNT members so is OK."
+else
+  echo "Error: There is only $MEMBER_COUNT member."
+  exit 1
+fi
+
+if ip link show $IFACE | grep -q "state UP"; then
+  echo "The interface $IFACE is UP."
+else
+  echo "The interface $IFACE is DOWN."
+  exit 1
+fi
+
+################################
+# postgresql section
+################################
+
+sudo -u postgres psql -h 127.0.0.1 -c "select 1;" &>/dev/null
+if [ $? -eq 0 ]; then
+  echo "PostgreSQL connection is successful."
+else
+  echo "Failed to connect to PostgreSQL."
+  exit 1;
+fi
+
+sudo -u postgres psql -h 127.0.0.1 -c "SELECT pg_current_wal_lsn();" &>/dev/null
+if [ $? -eq 0 ]; then
+  echo "PostgreSQL WAL LSN query is successful."
+else
+  echo "Failed to execute PostgreSQL WAL LSN query."
+  exit 1;
+fi
+
+IS_RECOVERY=$(sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r')
+
+# Check the result and print the appropriate message
+if [ "$IS_RECOVERY" == "t" ]; then
+  echo "The database is in recovery mode (Read-Only)."
+else
+  echo "The database is not in recovery mode (Read-Write)."
+fi
+
+sed -i 's/.*postgresql.*//g' /etc/hosts
+echo "$IP_VIRTUAL master.postgresql.service" >> /etc/hosts
+rbcli service stop redborder-postgresql 

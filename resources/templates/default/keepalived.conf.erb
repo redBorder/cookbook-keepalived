@@ -95,6 +95,11 @@ vrrp_instance vi_<%= ip %> {
      notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh"
      notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh"
    <% end %>
+
+   <% if services.detect { |x| x["service"] == "postgresql" } %>
+     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh"
+     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh"
+   <% end %>
 }
 <% end %>
 <% end %>

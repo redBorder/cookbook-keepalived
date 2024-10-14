@@ -96,7 +96,9 @@ action :add do
       group 'root'
       mode '0644'
       retries 2
-      notifies :run, 'execute[notify_master_postgresql]', :immediately
+      if !virtual_ips['internal']['postgresql']['ip'].nil?
+        notifies :run, 'execute[notify_master_postgresql]', :immediately
+      end
       notifies :reload, 'service[keepalived]'
       variables(vrrp_password: vrrp_secrets['pass'], managers: managers, start_id: vrrp_secrets['start_id'], balanced_services: balanced_services, virtual_ips: virtual_ips, virtual_ips_per_ip: virtual_ips_per_ip, has_any_virtual_ip: has_any_virtual_ip, manager_services: manager_services, ipmgt: ipmgt, iface: iface, ipsync: ipaddress_sync, managers_per_service: managers_per_service)
     end

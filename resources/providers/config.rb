@@ -96,7 +96,7 @@ action :add do
       group 'root'
       mode '0644'
       retries 2
-      if !virtual_ips['internal']['postgresql']['ip'].nil?
+      unless virtual_ips['internal']['postgresql']['ip'].nil?
         notifies :run, 'execute[notify_master_postgresql]', :immediately
       end
       notifies :reload, 'service[keepalived]'

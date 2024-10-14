@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.2.0
+
+  - Miguel Negron
+    - [9c39609] notify webui only for webui service
+
 ## 0.1.1
 
   - Miguel Negrón

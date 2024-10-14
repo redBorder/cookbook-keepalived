@@ -19,15 +19,6 @@ else
   exit 1
 fi
 
-IP_ASSIGNED_IFACE=$(ip -o addr show | grep $IP_VIRTUAL | awk '{print $2}')
-
-if [ "$IP_ASSIGNED_IFACE" == "$IFACE" ]; then
-  echo "The virtual IP $IP_VIRTUAL is correctly assigned to the interface $IFACE."
-else
-  echo "Error: Virtual IP $IP_VIRTUAL is not assigned to the interface $IFACE."
-  exit 1
-fi
-
 SERF_OUTPUT=$(serf members -format=json -status=alive)
 MEMBER_COUNT=$(echo "$SERF_OUTPUT" | jq '.members | length')
 
@@ -54,22 +45,25 @@ if [ $? -eq 0 ]; then
   echo "PostgreSQL connection is successful."
 else
   echo "Failed to connect to PostgreSQL."
-  exit 1;
-fi
-
-sudo -u postgres psql -h 127.0.0.1 -c "SELECT pg_current_wal_lsn();" &>/dev/null
-if [ $? -eq 0 ]; then
-  echo "PostgreSQL WAL LSN query is successful."
-else
-  echo "Failed to execute PostgreSQL WAL LSN query."
-  exit 1;
+  exit 1
 fi
 
 IS_RECOVERY=$(sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r')
+MASTER_NAME=$(serf members | grep 'postgresql=ready' | awk '{print $1}')
+CURRENT_NODE=$(hostname -s)
+
 if [ "$IS_RECOVERY" == "t" ]; then
-  echo "The database is in recovery mode (Read-Only)."
+  echo "The database is in recovery mode (Read-Only) on $CURRENT_NODE."
+
+  if [ -z "$MASTER_NAME" ]; then
+    echo "Could not determine the master node."
+    exit 1
+  fi
+
+  echo "Master node is: $MASTER_NAME. Syncing from master..."
+  rb_sync_from_master.sh $MASTER_NAME
 else
-  echo "The database is not in recovery mode (Read-Write)."
+  echo "The database is not in recovery mode (Read-Write) on $CURRENT_NODE."
 fi
 
 sed -i 's/.*postgresql.*//g' /etc/hosts

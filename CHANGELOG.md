@@ -1,6 +1,16 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.2.0
+
+  - Miguel Negron
+    - [9c39609] notify webui only for webui service
+
+## 0.1.1
+
+  - Miguel Negrón
+    - [2cabb15] Add pre and postun to clean the cookbook
+
 ## 0.1.0
 
   - David Vanhoucke
@@ -8,7 +18,7 @@ cookbook-keepalived CHANGELOG
 
 ## 0.0.2
 
-  - Miguel Negron
+  - Miguel Negrón
     - [09d3ee9] add keepalived logs
     - [0bb11e1] Update rpm.yml
     - [e95a3aa] Update README

@@ -121,7 +121,7 @@ action :add do
       service_name 'keepalived'
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
-      action [:restart, :enable]
+      action [:start, :enable]
     end
 
     Chef::Log.info('keepalived cookbook has been processed')

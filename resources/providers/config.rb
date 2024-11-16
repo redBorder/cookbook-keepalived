@@ -96,9 +96,7 @@ action :add do
       group 'root'
       mode '0644'
       retries 2
-      if virtual_ips['internal']['postgresql']['ip'].nil?
-        notifies :run, 'execute[remove_postgresql_from_hosts]', :immediately
-      else
+      unless virtual_ips['internal']['postgresql']['ip'].nil?
         notifies :run, 'execute[notify_master_postgresql]', :immediately
       end
       notifies :reload, 'service[keepalived]'
@@ -131,12 +129,6 @@ action :add do
     execute 'rb_create_lo.sh' do
       command '/usr/lib/redborder/bin/rb_create_lo.sh'
       action :nothing
-    end
-
-    execute 'remove_postgresql_from_hosts' do
-      command "sed -i '/.*postgresql.*$/d' /etc/hosts"
-      action :nothing
-      only_if "grep -q '.*postgresql.*' /etc/hosts"
     end
 
     service 'keepalived' do

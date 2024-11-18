@@ -97,6 +97,8 @@ action :add do
       mode '0644'
       retries 2
       unless virtual_ips['internal']['postgresql']['ip'].nil?
+        # Deregister postgresql from node to re add it in consul
+        node.normal['postgresql']['registered'] = false
         notifies :run, 'execute[notify_master_postgresql]', :immediately
       end
       notifies :reload, 'service[keepalived]'

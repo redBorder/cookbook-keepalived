@@ -49,21 +49,15 @@ else
 fi
 
 IS_RECOVERY=$(sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r')
-MASTER_NAME=$(serf members | grep 'postgresql_role=master' | awk '{print $1}')
 CURRENT_NODE=$(hostname -s)
 
 if [ "x$IS_RECOVERY" == "xt" ]; then
   echo "The database is in recovery mode (Read-Only) on $CURRENT_NODE."
 
-  if [ -z "$MASTER_NAME" ]; then
-    echo "Could not determine the master node."
-    exit 1
-  fi
-
-  echo "Master node is: $MASTER_NAME. Syncing from master..."
-  rb_sync_from_master.sh $MASTER_NAME
+  rb_sync_from_master.sh $CURRENT_NODE
 else
   echo "The database is not in recovery mode (Read-Write) on $CURRENT_NODE."
+  touch /tmp/postgresql.trigger
 fi
 
 echo "Updating /etc/hosts"

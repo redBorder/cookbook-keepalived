@@ -82,11 +82,6 @@ action :add do
         retries 2
         variables(vip: virtual_ips['internal']['postgresql']['ip'], iface: virtual_ips['internal']['postgresql']['iface'])
       end
-
-      execute 'notify_master_postgresql' do
-        command '/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh'
-        action :nothing
-      end
     end
 
     template '/etc/keepalived/keepalived.conf' do
@@ -96,11 +91,6 @@ action :add do
       group 'root'
       mode '0644'
       retries 2
-      unless virtual_ips['internal']['postgresql']['ip'].nil?
-        # Deregister postgresql from node to re add it in consul
-        node.normal['postgresql']['registered'] = false
-        notifies :run, 'execute[notify_master_postgresql]', :immediately
-      end
       notifies :reload, 'service[keepalived]'
       variables(vrrp_password: vrrp_secrets['pass'], managers: managers, start_id: vrrp_secrets['start_id'], balanced_services: balanced_services, virtual_ips: virtual_ips, virtual_ips_per_ip: virtual_ips_per_ip, has_any_virtual_ip: has_any_virtual_ip, manager_services: manager_services, ipmgt: ipmgt, iface: iface, ipsync: ipaddress_sync, managers_per_service: managers_per_service)
     end

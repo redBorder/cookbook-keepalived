@@ -9,7 +9,7 @@ module Keepalived
         ipaddress = n['ipaddress']
         manager_hash[m_name] = { ipaddress_sync: ip_sync, ipaddress: ipaddress }
       end
-      manager_hash
+      manager_hash.to_json
     end
   end
 end

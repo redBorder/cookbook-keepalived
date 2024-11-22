@@ -107,7 +107,7 @@ vrrp_instance vi_<%= ip %> {
 <% end %>
 
 vrrp_script check_sync_interface {
-  script "/usr/lib/redborder/bin/rb_check_interface.sh <%= @manager_ips %>"
+  script "/usr/lib/redborder/bin/rb_check_interface.sh '<%= @manager_ips %>'"  
   rise 1
   fall 3
   interval 2

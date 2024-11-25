@@ -65,7 +65,7 @@ action :add do
     unless virtual_ips['internal']['postgresql']['ip'].nil?
       template '/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh' do
         cookbook 'keepalived'
-        source 'notify_postgresql.erb'
+        source 'notify_master_postgresql.erb'
         owner 'root'
         group 'root'
         mode '0755'
@@ -75,7 +75,7 @@ action :add do
 
       template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh' do
         cookbook 'keepalived'
-        source 'notify_postgresql.erb'
+        source 'notify_backup_postgresql.erb'
         owner 'root'
         group 'root'
         mode '0755'

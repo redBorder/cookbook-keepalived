@@ -1,60 +1,14 @@
 #!/bin/bash
 
-VIRTUAL_IP=<%= @vip %>
-IFACE=<%= @iface %> 
-KEEPALIVED_CONF="/etc/keepalived/keepalived.conf"
+MASTER_NODE=<%= @master_node %>
 LOG_FILE=/tmp/rb_notify_backup_postgresql.log
 
 date >> "$LOG_FILE"
 echo "Executing rb_notify_backup_postgresql" >> "$LOG_FILE"
 
-################################
-# checking status section
-################################
-
-grep "vrrp_sync_group vg_${VIRTUAL_IP}_postgresql {" $KEEPALIVED_CONF > /dev/null
-
-if [ $? -eq 0 ]; then
-  echo "The virtual IP $VIRTUAL_IP is registered in the vrrp_sync_group." >> "$LOG_FILE"
+if [ "current-master" == "$MASTER_NODE" ]; then
+  echo "Please wait for next chef-client run" >> "$LOG_FILE"
 else
-  echo "Error: The virtual IP $VIRTUAL_IP is not registered in vrrp_sync_group." >> "$LOG_FILE"
-  exit 1
+  echo "Executing rb_sync_from_master.sh $MASTER_NODE" >> "$LOG_FILE"
+  /usr/lib/redborder/bin/rb_sync_from_master.sh $MASTER_NODE
 fi
-
-SERF_OUTPUT=$(serf members -format=json -status=alive)
-MEMBER_COUNT=$(echo "$SERF_OUTPUT" | jq '.members | length')
-
-if [ "$MEMBER_COUNT" -gt 1 ]; then
-  echo "The cluster has $MEMBER_COUNT members so is OK." >> "$LOG_FILE"
-else
-  echo "Error: There is only $MEMBER_COUNT member." >> "$LOG_FILE"
-  exit 1
-fi
-
-################################
-# checking who is master
-################################
-
-ips_on_interface=($(ip addr show dev "$IFACE" | awk '/inet /{print $2}' | cut -d'/' -f1))
-
-if [[ " ${ips_on_interface[*]} " != *" $VIRTUAL_IP "* ]]; then
-  echo "The virtual IP $VIRTUAL_IP is not assigned to the interface $IFACE." >> "$LOG_FILE"
-  is_master=true
-else
-  echo "The virtual IP $VIRTUAL_IP is assigned to the interface $IFACE." >> "$LOG_FILE"
-  exit 1
-fi
-
-sync_ip=${ips_on_interface[0]}
-echo "IP Sync on $IFACE: $sync_ip" >> "$LOG_FILE"
-
-serf_members=$(serf members | grep 'alive')
-master_node=$(echo "$serf_members" | grep "$sync_ip" | awk '{print $1}')
-
-if [ -z "$master_node" ]; then
-  echo "No node found in Serf with the sync IP $sync_ip." >> "$LOG_FILE"
-  exit 1
-fi
-
-echo "Executing rb_sync_from_master.sh $master_node" >> "$LOG_FILE"
-rb_sync_from_master.sh $master_node >> "$LOG_FILE"

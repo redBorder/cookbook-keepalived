@@ -1,37 +1,16 @@
 #!/bin/bash
 
-IP_VIRTUAL=<%= @vip %>
-IFACE=<%= @iface %> 
-KEEPALIVED_CONF="/etc/keepalived/keepalived.conf"
+MASTER_NODE=<%= @master_node %>
 LOG_FILE=/tmp/rb_notify_master_postgresql.log
 
 date >> "$LOG_FILE"
 echo "Executing rb_notify_master_postgresql" >> "$LOG_FILE"
 
-################################
-# checking status section
-################################
-
-grep "vrrp_sync_group vg_${IP_VIRTUAL}_postgresql {" $KEEPALIVED_CONF > /dev/null
-
-if [ $? -eq 0 ]; then
-  echo "The virtual IP $IP_VIRTUAL is registered in the vrrp_sync_group." >> "$LOG_FILE"
+if [ "current-master" == "$MASTER_NODE" ]; then
+  echo "Promoting to master" >> "$LOG_FILE"
+  touch /tmp/postgresql.trigger
+  sed -i '/^primary_conninfo/d' /var/lib/pgsql/data/postgresql.conf
+  sed -i '/^promote_trigger_file/d' /var/lib/pgsql/data/postgresql.conf
 else
-  echo "Error: The virtual IP $IP_VIRTUAL is not registered in vrrp_sync_group." >> "$LOG_FILE"
-  exit 1
+  echo "Please wait for next chef-client run" >> "$LOG_FILE"
 fi
-
-SERF_OUTPUT=$(serf members -format=json -status=alive)
-MEMBER_COUNT=$(echo "$SERF_OUTPUT" | jq '.members | length')
-
-if [ "$MEMBER_COUNT" -gt 1 ]; then
-  echo "The cluster has $MEMBER_COUNT members so is OK." >> "$LOG_FILE"
-else
-  echo "Error: There is only $MEMBER_COUNT member." >> "$LOG_FILE"
-  exit 1
-fi
-
-echo "Executing touch /tmp/postgresql.trigger" >> "$LOG_FILE"
-touch /tmp/postgresql.trigger
-sed -i '/^primary_conninfo/d' /var/lib/pgsql/data/postgresql.conf
-sed -i '/^promote_trigger_file/d' /var/lib/pgsql/data/postgresql.conf

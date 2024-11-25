@@ -1,10 +1,14 @@
 #!/bin/bash
 
 MASTER_NODE=<%= @master_node %>
-LOG_FILE=/tmp/rb_notify_master_postgresql.log
+LOG_FILE=/tmp/rb_notify_postgresql_master.log
 
 date >> "$LOG_FILE"
 echo "Executing rb_notify_master_postgresql" >> "$LOG_FILE"
+
+echo "Cleaning tmp files" >> "$LOG_FILE"
+rm -f /tmp/postgresql.trigger
+rm -f /tmp/rb_notify_postgresql*
 
 if [ "current-master" == "$MASTER_NODE" ]; then
   echo "Promoting to master" >> "$LOG_FILE"

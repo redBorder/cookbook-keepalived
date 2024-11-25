@@ -1,14 +1,18 @@
 #!/bin/bash
 
 MASTER_NODE=<%= @master_node %>
-LOG_FILE=/tmp/rb_notify_backup_postgresql.log
+LOG_FILE=/tmp/rb_notify_postgresql_backup.log
 
 date >> "$LOG_FILE"
 echo "Executing rb_notify_backup_postgresql" >> "$LOG_FILE"
+
+echo "Cleaning tmp files" >> "$LOG_FILE"
+rm -f /tmp/postgresql.trigger
+rm -f /tmp/rb_notify_postgresql*
 
 if [ "current-master" == "$MASTER_NODE" ]; then
   echo "Please wait for next chef-client run" >> "$LOG_FILE"
 else
   echo "Executing rb_sync_from_master.sh $MASTER_NODE" >> "$LOG_FILE"
-  /usr/lib/redborder/bin/rb_sync_from_master.sh $MASTER_NODE
+  /usr/lib/redborder/bin/rb_sync_from_master.sh $MASTER_NODE >> "$LOG_FILE"
 fi

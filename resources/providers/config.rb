@@ -86,12 +86,6 @@ action :add do
         variables(master_node: get_postgresql_master(virtual_ips['internal']['postgresql']['ip'],
                                                      virtual_ips['internal']['postgresql']['iface']))
       end
-
-      execute 'set_selinux_permissive' do
-        command 'setenforce 0'
-        action :run
-        only_if 'getenforce | grep -q "Enforcing"'
-      end
     end
 
     template '/etc/keepalived/keepalived.conf' do
@@ -148,10 +142,6 @@ end
 
 action :remove do
   begin
-    execute 'set_selinux_permissive' do
-      command 'setenforce 1'
-      action :run
-    end
 
     service 'keepalived' do
       supports stop: true

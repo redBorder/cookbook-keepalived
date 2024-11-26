@@ -86,6 +86,12 @@ action :add do
         variables(master_node: get_postgresql_master(virtual_ips['internal']['postgresql']['ip'],
                                                      virtual_ips['internal']['postgresql']['iface']))
       end
+
+      execute 'set_keepalived_permissive' do
+        command 'semanage permissive -a keepalived_t'
+        action :run
+        only_if { !shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
+      end
     end
 
     template '/etc/keepalived/keepalived.conf' do
@@ -142,6 +148,11 @@ end
 
 action :remove do
   begin
+    execute 'remove_keepalived_permissive' do
+      command 'semanage permissive -d keepalived_t'
+      action :run
+      only_if { shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
+    end
 
     service 'keepalived' do
       supports stop: true

@@ -91,7 +91,7 @@ action :add do
       execute 'set_keepalived_permissive' do
         command 'semanage permissive -a keepalived_t'
         action :run
-        only_if { !shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
+        not_if { shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
       end
     end
 

@@ -5,7 +5,7 @@ module Keepalived
         priority = 50 + managers.size - index
         {
           name: manager.name,
-          priority: priority
+          priority: priority,
         }
       end
 

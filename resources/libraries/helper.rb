@@ -1,20 +1,28 @@
 module Keepalived
   module Helper
-    def get_postgresql_master(virtual_ip, iface)
-      # Fetch IPs on the interface
-      ips_on_interface = `ip addr show dev #{iface}`.lines
-                                                    .select { |line| line.match?(/\binet\b/) }
-                                                    .map { |line| line.split[1].split('/').first }
+    def get_master(virtual_ip, iface, managers)
+      sorted_managers = managers.map.with_index do |manager, index|
+        priority = 50 + managers.size - index
+        {
+          name: manager.name,
+          priority: priority
+        }
+      end
 
-      return 'current-master' unless ips_on_interface.include?(virtual_ip)
+      top_nodes = sorted_managers.first(2).sort_by { |node| -node[:priority] }
 
-      # Fetch sync IP
-      sync_ip = ips_on_interface.first
+      if iface_has_virtual_ip?(iface, virtual_ip)
+        top_nodes.second[:name]
+      else
+        top_nodes.first[:name]
+      end
+    end
 
-      # Fetch master name from serf members
-      serf_members = `serf members`.lines.select { |line| line.include?('alive') }
-      master_node = serf_members.find { |member| !member.include?(sync_ip) }
-      master_node&.split&.first
+    private
+
+    def iface_has_virtual_ip?(iface, virtual_ip)
+      iface_data = `ip addr show #{iface}`
+      iface_data.include?(virtual_ip)
     end
   end
 end

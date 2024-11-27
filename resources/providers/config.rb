@@ -65,6 +65,9 @@ action :add do
     end
 
     unless virtual_ips['internal']['postgresql']['ip'].nil?
+      postgresql_vrrp = virtual_ips['internal']['postgresql']['ip']
+      postgresql_iface = virtual_ips['internal']['postgresql']['iface']
+
       template '/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh' do
         cookbook 'keepalived'
         source 'notify_master_postgresql.erb'
@@ -72,8 +75,7 @@ action :add do
         group 'root'
         mode '0755'
         retries 2
-        variables(master_node: get_postgresql_master(virtual_ips['internal']['postgresql']['ip'],
-                                                     virtual_ips['internal']['postgresql']['iface']))
+        variables(master_node: get_master(postgresql_vrrp, postgresql_iface, managers))
       end
 
       template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh' do
@@ -83,8 +85,7 @@ action :add do
         group 'root'
         mode '0755'
         retries 2
-        variables(master_node: get_postgresql_master(virtual_ips['internal']['postgresql']['ip'],
-                                                     virtual_ips['internal']['postgresql']['iface']))
+        variables(master_node: get_master(postgresql_vrrp, postgresql_iface, managers))
       end
 
       execute 'set_keepalived_permissive' do

@@ -75,7 +75,6 @@ action :add do
         group 'root'
         mode '0755'
         retries 2
-        variables(master_node: get_master(postgresql_vrrp, postgresql_iface, managers))
       end
 
       template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh' do

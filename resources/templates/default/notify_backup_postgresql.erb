@@ -1,7 +1,6 @@
 #!/bin/bash
 
 MASTER_NODE=<%= @master_node %>
-CURRENT_NODE=$(hostname -s)
 LOG_FILE=/tmp/rb_notify_postgresql_backup.log
 
 # Cleaning tmp files
@@ -11,7 +10,5 @@ rm -f /tmp/rb_notify_postgresql*
 date >> "$LOG_FILE"
 echo "Executing rb_notify_backup_postgresql" >> "$LOG_FILE"
 
-if [ $CURRENT_NODE != $MASTER_NODE ]; then
-  echo "Executing rb_sync_from_master.sh $MASTER_NODE" >> "$LOG_FILE"
-  /usr/lib/redborder/bin/rb_sync_from_master.sh $MASTER_NODE >> "$LOG_FILE"
-fi
+echo "Executing rb_sync_from_master.sh $MASTER_NODE" >> "$LOG_FILE"
+/usr/lib/redborder/bin/rb_sync_from_master.sh $MASTER_NODE >> "$LOG_FILE"

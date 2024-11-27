@@ -12,9 +12,9 @@ module Keepalived
       top_nodes = sorted_managers.first(2).sort_by { |node| -node[:priority] }
 
       if iface_has_virtual_ip?(iface, virtual_ip)
-        top_nodes.second[:name]
+        top_nodes[1][:name]
       else
-        top_nodes.first[:name]
+        top_nodes[0][:name]
       end
     end
 

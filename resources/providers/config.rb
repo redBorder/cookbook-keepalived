@@ -85,7 +85,7 @@ action :add do
         iface: iface,
         ipsync: ipaddress_sync,
         managers_per_service: managers_per_service,
-        manager_ips: find_managers
+        sync_iface_name: interface_for_ip(ipaddress_sync)
       )
     end
 

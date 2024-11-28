@@ -1,6 +1,8 @@
 #!/bin/bash
 
-MASTER_NODE=<%= @master_node %>
+VIRTUAL_IP=<%= @virtual_ip %>
+IFACE=<%= @iface %>
+NAME=postgresql
 LOG_FILE=/tmp/rb_notify_postgresql_master.log
 
 # Cleaning tmp files
@@ -9,6 +11,31 @@ rm -f /tmp/rb_notify_postgresql*
 
 date >> "$LOG_FILE"
 echo "Executing rb_notify_master_postgresql" >> "$LOG_FILE"
+
+grep vrrp_sync_group /etc/keepalived/keepalived.conf | grep -q $NAME
+if [ $? -ne 0 ]; then
+  echo "$NAME has no virtual ip on this node" >> "$LOG_FILE"
+  exit 0
+fi
+
+# If the VIP is not up, then something is wrong
+found=0
+sleep 5 # wait 5 seconds to converge keepalived successfully
+
+for i in $(seq 0 2); do
+  ip addr show dev $IFACE | grep "inet " | awk '{print $2}' | sed 's/\/.*//' | grep -q "^$VIRTUAL_IP$"
+    if [ $? -eq 0 ]; then
+      # found virtual ip address
+      found=1
+      break
+    fi
+  sleep 1
+done
+
+if [ $found -eq 0 ]; then
+  echo "error: virtual ip $VIRTUAL_IP not found, exiting" >> "$LOG_FILE"
+  exit 0
+fi
 
 echo "Promoting to master" >> "$LOG_FILE"
 touch /tmp/postgresql.trigger

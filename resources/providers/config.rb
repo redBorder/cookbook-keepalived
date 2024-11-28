@@ -4,8 +4,6 @@
 # Provider:: config
 #
 
-include Keepalived::Helper
-
 action :add do
   begin
     user = new_resource.user
@@ -75,6 +73,7 @@ action :add do
         group 'root'
         mode '0755'
         retries 2
+        variables(virtual_ip: postgresql_vrrp, iface: postgresql_iface)
       end
 
       template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh' do
@@ -84,7 +83,7 @@ action :add do
         group 'root'
         mode '0755'
         retries 2
-        variables(master_node: get_master(postgresql_vrrp, postgresql_iface, managers))
+        variables(virtual_ip: postgresql_vrrp, iface: postgresql_iface)
       end
 
       execute 'set_keepalived_permissive' do

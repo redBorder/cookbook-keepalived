@@ -44,7 +44,11 @@ vrrp_instance vi_<%= ip %> {
     state BACKUP
     interface <%= iface %>
     virtual_router_id <%= ((@start_id.nil? ? 111 : @start_id.to_i) + index).to_s  %>
+    <% if services.detect { |x| x["service"] == "postgresql" } %>
+    priority 100
+    <% else %>
     priority <%= 50+@managers.size-@managers.index { |m| m.name == node.name } %>
+    <% end %>
     advert_int 1
     nopreempt
 <% if !node["redborder"].nil? and !node["redborder"]["dmidecode"].nil? and !node["redborder"]["dmidecode"]["manufacturer"].nil? and node["redborder"]["dmidecode"]["manufacturer"].to_s.downcase == "xen" %>

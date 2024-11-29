@@ -4,6 +4,8 @@
 # Provider:: config
 #
 
+include Keepalived::Helper
+
 action :add do
   begin
     user = new_resource.user
@@ -70,7 +72,21 @@ action :add do
       mode '0644'
       retries 2
       notifies :reload, 'service[keepalived]'
-      variables(vrrp_password: vrrp_secrets['pass'], managers: managers, start_id: vrrp_secrets['start_id'], balanced_services: balanced_services, virtual_ips: virtual_ips, virtual_ips_per_ip: virtual_ips_per_ip, has_any_virtual_ip: has_any_virtual_ip, manager_services: manager_services, ipmgt: ipmgt, iface: iface, ipsync: ipaddress_sync, managers_per_service: managers_per_service)
+      variables(
+        vrrp_password: vrrp_secrets['pass'],
+        managers: managers,
+        start_id: vrrp_secrets['start_id'],
+        balanced_services: balanced_services,
+        virtual_ips: virtual_ips,
+        virtual_ips_per_ip: virtual_ips_per_ip,
+        has_any_virtual_ip: has_any_virtual_ip,
+        manager_services: manager_services,
+        ipmgt: ipmgt,
+        iface: iface,
+        ipsync: ipaddress_sync,
+        managers_per_service: managers_per_service,
+        sync_iface_name: interface_for_ip(ipaddress_sync)
+      )
     end
 
     ips_added = {}

@@ -91,6 +91,10 @@ vrrp_instance vi_<%= ip %> {
     virtual_ipaddress {
         <%= ip %>/32
     }
+    track_interface {
+      <%= @sync_iface_name %>
+    }
+
    <% webui_services = services.select{ |x| x['service']=='webui' } %>
    <% if webui_services.count > 0 && webui_services.first['ip'] == ip %>
      notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh"

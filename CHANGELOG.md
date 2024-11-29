@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.2.1
+
+  - nilsver
+    - [f0f1604] track sync interface fix
+
 ## 0.2.0
 
   - Miguel Negron

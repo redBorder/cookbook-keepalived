@@ -3,6 +3,7 @@
 VIRTUAL_IP=<%= @virtual_ip %>
 IFACE=<%= @iface %>
 NAME=postgresql
+CURRENT_NODE=$(hostname -s)
 LOG_FILE=/tmp/rb_notify_postgresql_master.log
 
 # Cleaning tmp files
@@ -37,7 +38,14 @@ if [ $found -eq 0 ]; then
   exit 0
 fi
 
-echo "Promoting to master" >> "$LOG_FILE"
+# Promoting to master
+echo "Promoting to master $CURRENT_NODE" >> "$LOG_FILE"
+serf tags -set promoting=$CURRENT_NODE >> "$LOG_FILE"
 touch /tmp/postgresql.trigger
 sed -i '/^primary_conninfo/d' /var/lib/pgsql/data/postgresql.conf
 sed -i '/^promote_trigger_file/d' /var/lib/pgsql/data/postgresql.conf
+
+echo "Sleeping for 3 minutes to remove promoting serf tag" >> "$LOG_FILE"
+sleep 180
+serf tags -delete promoting >> "$LOG_FILE"
+echo "serf tag has been deleted" >> "$LOG_FILE"

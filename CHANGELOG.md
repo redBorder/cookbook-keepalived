@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.0
+
+  - Rafael Gomez
+    - [54e7acd] Remove user login permissions to user keepalived
+
 ## 0.2.1
 
   - nilsver

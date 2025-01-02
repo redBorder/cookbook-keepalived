@@ -39,10 +39,5 @@ if [ $found -eq 1 ]; then
 fi
 
 # Promoting to slave
-echo "Promoting to slave $CURRENT_NODE. Sleeping for 30 seconds to update promoting serf tag from master node" >> "$LOG_FILE"
-sleep 30
-SERF_OUTPUT=$(serf members)
-MEMBER_NAME=$(echo "$SERF_OUTPUT" | grep -oP 'promoting=\K[^,]+')
-
-echo "Executing rb_sync_from_master.sh $MEMBER_NAME" >> "$LOG_FILE"
-/usr/lib/redborder/bin/rb_sync_from_master.sh $MEMBER_NAME >> "$LOG_FILE"
+echo "Promoting to slave $CURRENT_NODE with IP: $VIRTUAL_IP" >> "$LOG_FILE"
+/usr/lib/redborder/bin/rb_sync_from_master.sh $VIRTUAL_IP >> "$LOG_FILE"

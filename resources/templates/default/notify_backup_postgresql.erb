@@ -41,35 +41,3 @@ fi
 # Promoting to slave
 echo "Promoting to slave $CURRENT_NODE with IP: $VIRTUAL_IP" >> "$LOG_FILE"
 /usr/lib/redborder/bin/rb_sync_from_master.sh $VIRTUAL_IP >> "$LOG_FILE"
-
-# Get the list of IPs from the 'serf members' command
-SERF_OUTPUT=$(serf members)
-
-# Initialize an empty variable to store IPs of nodes not in recovery
-MASTER_NODE_IP=""
-
-# Loop through each line of the output and extract the IP
-for line in $(echo "$SERF_OUTPUT" | grep -v '^\s*$' | awk '{print $2}'); do
-  IP=$(echo $line | cut -d: -f1) # Get the IP address (before the ':')
-
-  # Check if the node is in recovery by querying PostgreSQL
-  RECOVERY_STATUS=$(sudo -u postgres psql -h $IP -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r')
-
-  # If the status is not 't', it is not in recovery
-  if [ "$RECOVERY_STATUS" != "t" ]; then
-    MASTER_NODE_IP="$IP"
-  fi
-done
-
-# Modify the primary_conninfo line
-if grep -q "^primary_conninfo" "$POSTGRESQL_CONF_FILE"; then
-  sed -i "s/primary_conninfo = 'host=[^ ]*/primary_conninfo = 'host=$MASTER_NODE_IP/" "$POSTGRESQL_CONF_FILE"
-  if [ $? -eq 0 ]; then
-    systemctl reload postgresql.service
-    echo "Updated primary_conninfo host to $MASTER_NODE_IP in $POSTGRESQL_CONF_FILE" >> "$LOG_FILE"
-  else
-    echo "Failed to update primary_conninfo host in $POSTGRESQL_CONF_FILE" >> "$LOG_FILE"
-  fi
-else
-  echo "primary_conninfo line not found in $POSTGRESQL_CONF_FILE." >> "$LOG_FILE"
-fi

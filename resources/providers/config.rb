@@ -64,6 +64,28 @@ action :add do
       end
     end
 
+    unless virtual_ips['external']['sfacctd']['ip'].nil?
+      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_sfacctd.sh' do
+        cookbook 'keepalived'
+        source 'notify.erb'
+        owner 'root'
+        group 'root'
+        mode '0755'
+        retries 2
+        variables(vip: virtual_ips['external']['sfacctd']['ip'])
+      end
+
+      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_sfacctd.sh' do
+        cookbook 'keepalived'
+        source 'notify.erb'
+        owner 'root'
+        group 'root'
+        mode '0755'
+        retries 2
+        variables(vip: virtual_ips['external']['sfacctd']['ip'])
+      end
+    end
+
     template '/etc/keepalived/keepalived.conf' do
       cookbook 'keepalived'
       source 'keepalived.conf.erb'

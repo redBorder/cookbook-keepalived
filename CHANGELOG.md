@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.1
+
+  - Miguel Negrón
+    - [0aeeb4b] add notify master/backup script for sfacctd
+
 ## 0.3.0
 
   - Rafael Gomez

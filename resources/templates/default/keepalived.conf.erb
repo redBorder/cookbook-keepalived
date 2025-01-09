@@ -109,6 +109,11 @@ vrrp_instance vi_<%= ip %> {
      notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh"
      notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh"
    <% end %>
+   <% sfacctd_services = services.select{ |x| x['service']=='sfacctd' } %>
+   <% if sfacctd_services.count > 0 && sfacctd_services.first['ip'] == ip %>
+     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_sfacctd.sh"
+     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_sfacctd.sh"
+   <% end %>
 }
 <% end %>
 <% end %>

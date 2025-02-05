@@ -86,6 +86,31 @@ action :add do
       end
     end
 
+    unless virtual_ips['internal']['postgresql']['ip'].nil?
+      postgresql_vrrp = virtual_ips['internal']['postgresql']['ip']
+      postgresql_iface = virtual_ips['internal']['postgresql']['iface']
+
+      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh' do
+        cookbook 'keepalived'
+        source 'notify_master_postgresql.erb'
+        owner 'root'
+        group 'root'
+        mode '0755'
+        retries 2
+        variables(virtual_ip: postgresql_vrrp, iface: postgresql_iface)
+      end
+
+      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh' do
+        cookbook 'keepalived'
+        source 'notify_backup_postgresql.erb'
+        owner 'root'
+        group 'root'
+        mode '0755'
+        retries 2
+        variables(virtual_ip: postgresql_vrrp, iface: postgresql_iface)
+      end
+    end
+
     template '/etc/keepalived/keepalived.conf' do
       cookbook 'keepalived'
       source 'keepalived.conf.erb'
@@ -154,7 +179,6 @@ end
 
 action :remove do
   begin
-
     service 'keepalived' do
       supports stop: true
       action :stop

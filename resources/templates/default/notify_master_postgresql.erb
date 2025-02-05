@@ -40,6 +40,7 @@ fi
 
 # Promoting to master
 echo "Promoting to master $CURRENT_NODE" >> "$LOG_FILE"
+#rm -f /var/lib/pgsql/data/standby.signal
 touch /tmp/postgresql.trigger
 sed -i '/^primary_conninfo/d' /var/lib/pgsql/data/postgresql.conf
 sed -i '/^promote_trigger_file/d' /var/lib/pgsql/data/postgresql.conf

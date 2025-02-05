@@ -109,12 +109,6 @@ action :add do
         retries 2
         variables(virtual_ip: postgresql_vrrp, iface: postgresql_iface)
       end
-
-      execute 'set_keepalived_permissive' do
-        command 'semanage permissive -a keepalived_t'
-        action :run
-        not_if { shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
-      end
     end
 
     template '/etc/keepalived/keepalived.conf' do
@@ -185,12 +179,6 @@ end
 
 action :remove do
   begin
-    execute 'remove_keepalived_permissive' do
-      command 'semanage permissive -d keepalived_t'
-      action :run
-      only_if { shell_out('semanage permissive -l').stdout.include?('keepalived_t') }
-    end
-
     service 'keepalived' do
       supports stop: true
       action :stop

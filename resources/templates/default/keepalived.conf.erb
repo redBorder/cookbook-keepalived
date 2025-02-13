@@ -27,6 +27,10 @@ vrrp_sync_group vg_<%= ip %>_<%= tmp.join("_") %> {
     group {
         vi_<%= ip %>
     }
+    <% if services.detect { |x| x["service"] == "postgresql" } %>
+    notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh"
+    notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh"
+   <% end %>
 }
 <% end %>
 <% end %>
@@ -44,7 +48,11 @@ vrrp_instance vi_<%= ip %> {
     state BACKUP
     interface <%= iface %>
     virtual_router_id <%= ((@start_id.nil? ? 111 : @start_id.to_i) + index).to_s  %>
+    <% if services.detect { |x| x["service"] == "postgresql" } %>
+    priority 100
+    <% else %>
     priority <%= 50+@managers.size-@managers.index { |m| m.name == node.name } %>
+    <% end %>
     advert_int 1
     nopreempt
 <% if !node["redborder"].nil? and !node["redborder"]["dmidecode"].nil? and !node["redborder"]["dmidecode"]["manufacturer"].nil? and node["redborder"]["dmidecode"]["manufacturer"].to_s.downcase == "xen" %>
@@ -104,10 +112,6 @@ vrrp_instance vi_<%= ip %> {
    <% if sfacctd_services.count > 0 && sfacctd_services.first['ip'] == ip %>
      notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_sfacctd.sh"
      notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_sfacctd.sh"
-   <% end %>
-   <% if services.detect { |x| x["service"] == "postgresql" } %>
-    notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_postgresql.sh"
-    notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_postgresql.sh"
    <% end %>
 }
 <% end %>

@@ -1,6 +1,12 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.2
+
+  - Miguel Negrón
+    - [59f224a] Merge pull request #12 from redBorder/bugfix/#20932_remove_netaddr
+    - [6de3041] Remove NetAddr dependency
+
 ## 0.3.1
 
   - Miguel Negrón

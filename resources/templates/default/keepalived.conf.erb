@@ -182,11 +182,20 @@ virtual_server <%= external_vip[balance["service"]]["ip"] %> <%= balance[:port] 
        unless m["network"]["interfaces"][iface]["addresses"].nil?
            m["network"]["interfaces"][iface]["addresses"].each do |ip, ip_prop|
                if ip_prop["family"]=="inet" and ip!=external_vip[balance["service"]]["ip"]
-                   #check if it belongs to the same network
-                   net_iface=NetAddr::CIDR.create("#{ip}/#{ip_prop["prefixlen"]}").to_s
-                   net_virtual=NetAddr::CIDR.create("#{external_vip[balance["service"]]["ip"]}/#{ip_prop["prefixlen"]}").to_s
+                  # Obtener partes de la IP como enteros
+                  ip_parts = ip.split('.').map(&:to_i)
+                  vip_parts = external_vip[balance["service"]]["ip"].split('.').map(&:to_i)
+                  prefixlen = ip_prop["prefixlen"].to_i  # Asegurarse de que sea entero
 
-                   if net_virtual==net_iface
+                  # Convertir IPs a enteros
+                  ip_int = (ip_parts[0] << 24) | (ip_parts[1] << 16) | (ip_parts[2] << 8) | ip_parts[3]
+                  vip_int = (vip_parts[0] << 24) | (vip_parts[1] << 16) | (vip_parts[2] << 8) | vip_parts[3]
+
+                  # Crear máscara
+                  mask = ((1 << 32) - 1) << (32 - prefixlen) & 0xFFFFFFFF
+
+                  # Comparar redes
+                  if (ip_int & mask) == (vip_int & mask)
                        ipaddr=ip
                        break
                    end

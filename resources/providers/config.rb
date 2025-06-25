@@ -43,7 +43,7 @@ action :add do
     end
 
     unless virtual_ips['external']['nginx']['ip'].nil?
-      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh' do
+      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_nginx.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
@@ -53,7 +53,7 @@ action :add do
         variables(vip: virtual_ips['external']['nginx']['ip'])
       end
 
-      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh' do
+      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_nginx.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
@@ -85,7 +85,7 @@ action :add do
         variables(vip: virtual_ips['external']['sfacctd']['ip'])
       end
     end
-
+# Add new balanced ips for nginx? = map to associate vip with real ips
     template '/etc/keepalived/keepalived.conf' do
       cookbook 'keepalived'
       source 'keepalived.conf.erb'

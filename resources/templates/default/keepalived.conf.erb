@@ -42,7 +42,7 @@ vrrp_sync_group vg_<%= ip %>_<%= tmp.join("_") %> {
 vrrp_instance vi_<%= ip %> {
 <% iface=services.select{|x| x["enable"]}.first["iface"] %>
     state BACKUP
-    interface <%= iface %>
+    interface <%= iface #it is expected the management interface %>
     virtual_router_id <%= ((@start_id.nil? ? 111 : @start_id.to_i) + index).to_s  %>
     priority <%= 50+@managers.size-@managers.index { |m| m.name == node.name } %>
     advert_int 1
@@ -99,6 +99,11 @@ vrrp_instance vi_<%= ip %> {
    <% if webui_services.count > 0 && webui_services.first['ip'] == ip %>
      notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh"
      notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh"
+   <% end %>
+   <% nginx_services = services.select{ |x| x['service']=='nginx' } %>
+   <% if nginx_services.count > 0 && nginx_services.first['ip'] == ip %>
+     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_nginx.sh"
+     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_nginx.sh"
    <% end %>
    <% sfacctd_services = services.select{ |x| x['service']=='sfacctd' } %>
    <% if sfacctd_services.count > 0 && sfacctd_services.first['ip'] == ip %>

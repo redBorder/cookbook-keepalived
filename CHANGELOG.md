@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.3
+
+  - nilsver
+    - [5b91dc2] remove flush cache
+
 ## 0.3.2
 
   - Miguel Negrón

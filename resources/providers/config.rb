@@ -1,3 +1,4 @@
+
 # Cookbook:: keepalived
 #
 # Provider:: config
@@ -28,13 +29,6 @@ action :add do
       command "/usr/sbin/useradd -r #{user} -s /sbin/nologin"
       ignore_failure true
       not_if "getent passwd #{user}"
-    end
-
-    service 'keepalived' do
-      service_name 'keepalived'
-      ignore_failure true
-      supports status: true, reload: true, restart: true, enable: true
-      action [:start, :enable]
     end
 
     template '/etc/sysconfig/keepalived' do
@@ -143,6 +137,14 @@ action :add do
       command '/usr/lib/redborder/bin/rb_create_lo.sh'
       action :nothing
     end
+
+    service 'keepalived' do
+      service_name 'keepalived'
+      ignore_failure true
+      supports status: true, reload: true, restart: true, enable: true
+      action [:start, :enable]
+    end
+
     Chef::Log.info('keepalived cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)

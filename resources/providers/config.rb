@@ -23,7 +23,6 @@ action :add do
 
     dnf_package 'keepalived' do
       action :upgrade
-      flush_cache[:before]
     end
 
     execute 'create_user' do

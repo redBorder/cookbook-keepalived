@@ -42,7 +42,7 @@ action :add do
     end
 
     unless virtual_ips['external']['nginx']['ip'].nil?
-      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_webui.sh' do
+      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_nginx.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
@@ -52,14 +52,14 @@ action :add do
         variables(vip: virtual_ips['external']['nginx']['ip'])
       end
 
-      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_webui.sh' do
+      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_nginx.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
         group 'root'
         mode '0755'
         retries 2
-        variables(vip: virtual_ips['external']['webui']['ip'])
+        variables(vip: virtual_ips['external']['nginx']['ip'])
       end
     end
 

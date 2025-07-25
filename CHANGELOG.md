@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.5
+
+  - jnavarrorb
+    - [cb6bb50] Remove executable permissions on non-executable files
+
 ## 0.3.4
 
   - Rafael Gomez

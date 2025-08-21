@@ -1,6 +1,31 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.3.5
+
+  - jnavarrorb
+    - [cb6bb50] Remove executable permissions on non-executable files
+
+## 0.3.4
+
+  - Rafael Gomez
+    - [af4524d] Add permissive rules for keepalived service management
+    - [50d92f9] Enhance backup notification script to identify and update primary connection info based on active PostgreSQL nodes
+    - [558400e] Using serf tags to pass it to rb_sync_from_master
+    - [647375b] Using virtual ip as master
+    - [3ea70c4] set_keepalived_permissive if postgresql vrrp is registered
+    - [7f89792] Update notify posgresql without serf tags
+    - [284dcaa] Deregister postgresql from node to re add it in consul
+    - [eed9100] Remove master.postgresql.service from hosts deregistering virtual IP
+    - [c11d0d7] do not execute notify_master_postgresql if postgres ip is not registred
+    - [404d20f] rb_keepalived_master_notify_postgresql.sh is exectued each time keepalived.conf is changed
+    - [e91284f] rb_sync_from_master.sh added
+    - [5aa455d] Adding sync iface to internal virtual IPs insead of management
+    - [e661c73] Update notify_postgresql.erb
+    - 
+  - David Vanhoucke
+    - [eda657d] fix trigger file
+    
 ## 0.3.3
 
   - nilsver

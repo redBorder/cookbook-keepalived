@@ -184,6 +184,16 @@ end
 
 action :remove do
   begin
+    virtual_ips = new_resource.virtual_ips
+
+    if !virtual_ips['external']['webui']['ip'].nil?
+      execute 'remove_iptables_rule_webui' do
+        command "iptables -t nat -D PREROUTING -d #{virtual_ips['external']['webui']['ip']} -j REDIRECT"
+        only_if "iptables -t nat -L PREROUTING -n | grep #{virtual_ips['external']['webui']['ip']}"
+        ignore_failure true
+      end
+    end
+
     execute 'remove_keepalived_permissive' do
       command 'semanage permissive -d keepalived_t'
       action :run
@@ -192,7 +202,7 @@ action :remove do
 
     service 'keepalived' do
       supports stop: true
-      action :stop
+      action [:disable, :stop]
     end
 
     Chef::Log.info('keepalived cookbook has been processed')

@@ -186,7 +186,7 @@ action :remove do
   begin
     virtual_ips = new_resource.virtual_ips
 
-    if !virtual_ips['external']['webui']['ip'].nil?
+    unless virtual_ips['external']['webui']['ip'].nil?
       execute 'remove_iptables_rule_webui' do
         command "iptables -t nat -D PREROUTING -d #{virtual_ips['external']['webui']['ip']} -j REDIRECT"
         only_if "iptables -t nat -L PREROUTING -n | grep #{virtual_ips['external']['webui']['ip']}"

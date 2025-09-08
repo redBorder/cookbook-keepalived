@@ -184,16 +184,6 @@ end
 
 action :remove do
   begin
-    virtual_ips = new_resource.virtual_ips
-
-    unless virtual_ips['external']['webui']['ip'].nil?
-      execute 'remove_iptables_rule_webui' do
-        command "iptables -t nat -D PREROUTING -d #{virtual_ips['external']['webui']['ip']} -j REDIRECT"
-        only_if "iptables -t nat -L PREROUTING -n | grep #{virtual_ips['external']['webui']['ip']}"
-        ignore_failure true
-      end
-    end
-
     execute 'remove_keepalived_permissive' do
       command 'semanage permissive -d keepalived_t'
       action :run

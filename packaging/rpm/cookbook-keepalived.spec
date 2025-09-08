@@ -62,5 +62,5 @@ fi
 * Thu Oct 10 2024 Miguel Negrón <manegron@redborder.com>
 - Add pre and postun
 
-* Thu May 28 2024 David Vanhoucke <dvanhoucke@redborder.com>
+* Tue May 28 2024 David Vanhoucke <dvanhoucke@redborder.com>
  first spec version

@@ -1,6 +1,13 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.4.0
+
+  - nilsver
+    - [98f83a5] only add disable to remove action
+    - [8fbcfcf] fix lint
+    - [e6a3dd6] if webui disabled, keepalived also disabled, so remove ip table rule
+
 ## 0.3.5
 
   - jnavarrorb

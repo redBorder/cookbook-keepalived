@@ -192,7 +192,7 @@ action :remove do
 
     service 'keepalived' do
       supports stop: true
-      action :stop
+      action [:disable, :stop]
     end
 
     Chef::Log.info('keepalived cookbook has been processed')

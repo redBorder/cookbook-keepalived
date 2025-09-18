@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.4.1
+
+  - ljblancoredborder
+    - [ce1c365] rename of vip
+
 ## 0.4.0
 
   - nilsver

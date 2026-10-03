@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 0.4.2
+
+  - manegron
+    - [d4e673a] Upload cookbook only if opscode-erchef is active
+
 ## 0.4.1
 
   - ljblancoredborder

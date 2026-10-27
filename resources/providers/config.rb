@@ -20,6 +20,7 @@ action :add do
     iface = new_resource.iface_management
     ipaddress_sync = new_resource.ipaddress_sync
     managers_per_service = new_resource.managers_per_service
+    unicast_config = new_resource.unicast_config
 
     dnf_package 'keepalived' do
       action :upgrade
@@ -137,6 +138,7 @@ action :add do
         iface: iface,
         ipsync: ipaddress_sync,
         managers_per_service: managers_per_service,
+        unicast_config: unicast_config,
         sync_iface_name: interface_for_ip(ipaddress_sync)
       )
     end

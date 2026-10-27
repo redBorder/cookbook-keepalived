@@ -19,6 +19,13 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
+# Check if sync interface is down or has no link
+if [ -z "$IFACE" ] || [ ! -d "/sys/class/net/$IFACE" ] || [ "$(cat /sys/class/net/$IFACE/operstate 2>/dev/null)" = "down" ] || [ "$(cat /sys/class/net/$IFACE/operstate 2>/dev/null)" = "lowerlayerdown" ] || [ "$(cat /sys/class/net/$IFACE/carrier 2>/dev/null)" = "0" ]; then
+  echo "error: sync interface $IFACE is down or has no link, aborting promotion to master" >> "$LOG_FILE"
+  logger -t rb_keepalived_master_notify_postgresql "error: sync interface $IFACE is down or has no link, aborting promotion to master"
+  exit 0
+fi
+
 # If the VIP is not up, then something is wrong
 found=0
 sleep 5 # wait 5 seconds to converge keepalived successfully
@@ -42,5 +49,28 @@ fi
 echo "Promoting to master $CURRENT_NODE" >> "$LOG_FILE"
 #rm -f /var/lib/pgsql/data/standby.signal
 touch /tmp/postgresql.trigger
-sed -i '/^primary_conninfo/d' /var/lib/pgsql/data/postgresql.conf
-sed -i '/^promote_trigger_file/d' /var/lib/pgsql/data/postgresql.conf
+
+PG_CONF="/var/lib/pgsql/data/postgresql.conf"
+PG_CONF_BAK="/var/lib/pgsql/data/postgresql.conf.bak"
+
+# Maintain a valid backup if current file is non-empty
+if [ -s "$PG_CONF" ]; then
+  cp -p "$PG_CONF" "$PG_CONF_BAK"
+elif [ -s "$PG_CONF_BAK" ]; then
+  echo "warning: $PG_CONF is empty, restoring from backup" >> "$LOG_FILE"
+  cp -p "$PG_CONF_BAK" "$PG_CONF"
+fi
+
+# Strip standby settings for master mode
+if [ -f "$PG_CONF" ]; then
+  sed -i '/^primary_conninfo/d' "$PG_CONF"
+  sed -i '/^promote_trigger_file/d' "$PG_CONF"
+
+  # Ensure listen_addresses is present so remote connections are accepted
+  if ! grep -q "^listen_addresses" "$PG_CONF" 2>/dev/null; then
+    echo "listen_addresses = '*'" >> "$PG_CONF"
+  fi
+
+  # Flush changes to disk immediately so reboots cannot corrupt the file
+  sync "$PG_CONF"
+fi

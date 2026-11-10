@@ -155,6 +155,8 @@ vrrp_instance vi_<%= ip %> {
 virtual_server <%= external_vip[balance["service"]]["ip"] %> <%= balance[:port] %> {
     delay_loop 5
 <% if balance[:protocol] == "udp" %>
+    # keep the exporters on one node (no ops): netflow v9/ipfix data can only
+    # be decoded by the node that received its template
     #lvs_sched  ops
     lvs_sched wlc
 <% else %>
@@ -218,6 +220,15 @@ virtual_server <%= external_vip[balance["service"]]["ip"] %> <%= balance[:port] 
             misc_path "/usr/lib/redborder/bin/rb_checkping.sh <%= m.name %>"
         }
 <% end %>
+<% elsif balance[:health_port] %>
+        HTTP_GET {
+            url {
+                path /health
+                status_code 200
+            }
+            connect_port <%= balance[:health_port] %>
+            connect_timeout 10
+        }
 <% else %>
         MISC_CHECK {
             #connect_timeout 10

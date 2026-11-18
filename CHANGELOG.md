@@ -1,6 +1,16 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 1.0.0
+
+  - Miguel Negrón
+    - [e2a50c7] Merge pull request #25 from redBorder/Improvement/#27136_replace_services_with_x2kafka
+  - manegron
+    - [e2a50c7] Merge pull request #25 from redBorder/Improvement/#27136_replace_services_with_x2kafka
+    - [9bac279] Rename netflow2kafka and sflow2kafka
+  - Juan Soto
+    - [ebe24bd] Check udp balanced services with their /health endpoint when they have a health_port
+
 ## 0.4.2
 
   - manegron

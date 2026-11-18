@@ -64,25 +64,25 @@ action :add do
       end
     end
 
-    unless virtual_ips['external']['sfacctd']['ip'].nil?
-      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_sfacctd.sh' do
+    unless virtual_ips.dig('external', 'redborder-sflow2kafka', 'ip').nil?
+      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_redborder-sflow2kafka.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
         group 'root'
         mode '0755'
         retries 2
-        variables(vip: virtual_ips['external']['sfacctd']['ip'])
+        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
       end
 
-      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_sfacctd.sh' do
+      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_redborder-sflow2kafka.sh' do
         cookbook 'keepalived'
         source 'notify.erb'
         owner 'root'
         group 'root'
         mode '0755'
         retries 2
-        variables(vip: virtual_ips['external']['sfacctd']['ip'])
+        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
       end
     end
 

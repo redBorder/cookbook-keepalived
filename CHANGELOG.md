@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 1.1.0
+
+  - manegron
+    - [2a7c045] Update cookbook
+
 ## 1.0.0
 
   - Miguel Negrón

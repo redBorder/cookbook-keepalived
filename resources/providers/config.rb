@@ -26,6 +26,12 @@ action :add do
       action :upgrade
     end
 
+    # The keepalived notify scripts (notify.erb) use conntrack to drop the UDP
+    # entries of a VIP when its iptables REDIRECT rule changes
+    dnf_package 'conntrack-tools' do
+      action :install
+    end
+
     execute 'create_user' do
       command "/usr/sbin/useradd -r #{user} -s /sbin/nologin"
       ignore_failure true
@@ -64,25 +70,33 @@ action :add do
       end
     end
 
-    unless virtual_ips.dig('external', 'redborder-sflow2kafka', 'ip').nil?
-      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_redborder-sflow2kafka.sh' do
-        cookbook 'keepalived'
-        source 'notify.erb'
-        owner 'root'
-        group 'root'
-        mode '0755'
-        retries 2
-        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
-      end
+    # Every node has the IPVS virtual servers loaded, not only the VRRP master. A packet
+    # that the master forwards (LVS DR) to a backup still has the VIP as destination, so
+    # the backup's IPVS would balance it again and the packet would loop between nodes.
+    # The notify scripts add an iptables REDIRECT on the nodes without the VIP: it
+    # rewrites the destination to a local IP before IPVS sees it, so the local
+    # service gets the packet.
+    %w(redborder-netflow2kafka redborder-sflow2kafka).each do |svc|
+      vip = virtual_ips.dig('external', svc, 'ip')
+      next if vip.nil?
 
-      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_redborder-sflow2kafka.sh' do
-        cookbook 'keepalived'
-        source 'notify.erb'
-        owner 'root'
-        group 'root'
-        mode '0755'
-        retries 2
-        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
+      %w(master backup).each do |state|
+        template "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_#{svc}.sh" do
+          cookbook 'keepalived'
+          source 'notify.erb'
+          owner 'root'
+          group 'root'
+          mode '0755'
+          retries 2
+          variables(vip: vip)
+        end
+      end
+    end
+
+    # Leftovers from before sfacctd was replaced by redborder-sflow2kafka
+    %w(master backup).each do |state|
+      file "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_sfacctd.sh" do
+        action :delete
       end
     end
 
@@ -172,6 +186,16 @@ action :add do
           sync_iface_name: interface_for_ip(ipaddress_sync)
         )
       end
+    end
+
+    # LVS DR: the balanced VIPs are on lo:N, so the real servers must not answer ARP
+    # for them nor use them as source in their ARP requests
+    sysctl 'net.ipv4.conf.all.arp_ignore' do
+      value 1
+    end
+
+    sysctl 'net.ipv4.conf.all.arp_announce' do
+      value 2
     end
 
     ips_added = {}

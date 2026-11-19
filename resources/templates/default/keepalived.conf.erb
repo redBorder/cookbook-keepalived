@@ -103,15 +103,11 @@ vrrp_instance vi_<%= ip %> {
       <%= @sync_iface_name %>
     }
 
-   <% nginx_services = services.select{ |x| x['service']=='nginx' } %>
-   <% if nginx_services.count > 0 && nginx_services.first['ip'] == ip %>
-     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_nginx.sh"
-     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_nginx.sh"
-   <% end %>
-   <% sflow2kafka_services = services.select{ |x| x['service']=='redborder-sflow2kafka' } %>
-   <% if sflow2kafka_services.count > 0 && sflow2kafka_services.first['ip'] == ip %>
-     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_redborder-sflow2kafka.sh"
-     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_redborder-sflow2kafka.sh"
+   <%# The notify scripts only depend on the VIP, so when several services share it one pair is enough %>
+   <% notify_service = %w(nginx redborder-sflow2kafka redborder-netflow2kafka).find { |svc| services.any? { |x| x['service'] == svc && x['ip'] == ip } } %>
+   <% unless notify_service.nil? %>
+     notify_master "/usr/lib/redborder/bin/rb_keepalived_master_notify_<%= notify_service %>.sh"
+     notify_backup "/usr/lib/redborder/bin/rb_keepalived_backup_notify_<%= notify_service %>.sh"
    <% end %>
 }
 <% end %>

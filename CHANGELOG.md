@@ -1,6 +1,11 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 2.0.0
+
+  - manegron
+    - [423a4ee] Fix UDP problem redirect between nodes all the time with some switches (sflow) after swapping IP
+
 ## 1.1.0
 
   - manegron

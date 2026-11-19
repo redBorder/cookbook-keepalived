@@ -1,9 +1,21 @@
 #!/bin/bash
 
-if hostname -I | grep -q <%= @vip %>; then
+if hostname -I | grep -qw <%= @vip %>; then
     iptables -t nat -D PREROUTING -d <%= @vip %> -j REDIRECT &>/dev/null
 else
     if ! iptables -t nat -C PREROUTING -d <%= @vip %> -j REDIRECT 2>/dev/null; then
         iptables -t nat -A PREROUTING -d <%= @vip %> -j REDIRECT
     fi
 fi
+
+# nat rules only apply to the first packet of a conntrack entry. UDP exporters
+# (netflow/sflow) keep the same source port, so their entries never expire and
+# would keep the NAT decision taken before this change: a backup would keep
+# re-balancing them through IPVS (packet loop) and a new master would keep
+# redirecting them locally instead of balancing them. Drop the UDP entries
+# for the VIP so the next packet is evaluated again. TCP (nginx) is left alone.
+if command -v conntrack &>/dev/null; then
+    conntrack -D -p udp -d <%= @vip %> &>/dev/null
+fi
+
+exit 0

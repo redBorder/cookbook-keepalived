@@ -63,25 +63,13 @@ action :add do
       end
     end
 
-    unless virtual_ips.dig('external', 'redborder-sflow2kafka', 'ip').nil?
-      template '/usr/lib/redborder/bin/rb_keepalived_master_notify_redborder-sflow2kafka.sh' do
-        cookbook 'keepalived'
-        source 'notify.erb'
-        owner 'root'
-        group 'root'
-        mode '0755'
-        retries 2
-        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
-      end
-
-      template '/usr/lib/redborder/bin/rb_keepalived_backup_notify_redborder-sflow2kafka.sh' do
-        cookbook 'keepalived'
-        source 'notify.erb'
-        owner 'root'
-        group 'root'
-        mode '0755'
-        retries 2
-        variables(vip: virtual_ips['external']['redborder-sflow2kafka']['ip'])
+    # The VIP of redborder-sflow2kafka is on lo:N and the service binds 0.0.0.0, so the
+    # iptables REDIRECT notify scripts are no longer needed: remove the leftovers
+    %w(sfacctd redborder-sflow2kafka).each do |svc|
+      %w(master backup).each do |state|
+        file "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_#{svc}.sh" do
+          action :delete
+        end
       end
     end
 
@@ -139,6 +127,16 @@ action :add do
         managers_per_service: managers_per_service,
         sync_iface_name: interface_for_ip(ipaddress_sync)
       )
+    end
+
+    # LVS DR: the balanced VIPs are on lo:N, so the real servers must not answer ARP
+    # for them nor use them as source in their ARP requests
+    sysctl 'net.ipv4.conf.all.arp_ignore' do
+      value 1
+    end
+
+    sysctl 'net.ipv4.conf.all.arp_announce' do
+      value 2
     end
 
     ips_added = {}

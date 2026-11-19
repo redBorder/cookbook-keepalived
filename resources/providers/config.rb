@@ -25,6 +25,12 @@ action :add do
       action :upgrade
     end
 
+    # The keepalived notify scripts (notify.erb) use conntrack to drop the UDP
+    # entries of a VIP when its iptables REDIRECT rule changes
+    dnf_package 'conntrack-tools' do
+      action :install
+    end
+
     execute 'create_user' do
       command "/usr/sbin/useradd -r #{user} -s /sbin/nologin"
       ignore_failure true
@@ -63,13 +69,33 @@ action :add do
       end
     end
 
-    # The VIP of redborder-sflow2kafka is on lo:N and the service binds 0.0.0.0, so the
-    # iptables REDIRECT notify scripts are no longer needed: remove the leftovers
-    %w(sfacctd redborder-sflow2kafka).each do |svc|
+    # Every node has the IPVS virtual servers loaded, not only the VRRP master. A packet
+    # that the master forwards (LVS DR) to a backup still has the VIP as destination, so
+    # the backup's IPVS would balance it again and the packet would loop between nodes.
+    # The notify scripts add an iptables REDIRECT on the nodes without the VIP: it
+    # rewrites the destination to a local IP before IPVS sees it, so the local
+    # service gets the packet.
+    %w(redborder-netflow2kafka redborder-sflow2kafka).each do |svc|
+      vip = virtual_ips.dig('external', svc, 'ip')
+      next if vip.nil?
+
       %w(master backup).each do |state|
-        file "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_#{svc}.sh" do
-          action :delete
+        template "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_#{svc}.sh" do
+          cookbook 'keepalived'
+          source 'notify.erb'
+          owner 'root'
+          group 'root'
+          mode '0755'
+          retries 2
+          variables(vip: vip)
         end
+      end
+    end
+
+    # Leftovers from before sfacctd was replaced by redborder-sflow2kafka
+    %w(master backup).each do |state|
+      file "/usr/lib/redborder/bin/rb_keepalived_#{state}_notify_sfacctd.sh" do
+        action :delete
       end
     end
 

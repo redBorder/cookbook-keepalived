@@ -10,7 +10,6 @@ default_action :add
 
 attribute :user, kind_of: String, default: 'keepalived'
 attribute :vrrp_secrets, kind_of: Hash, default: {}
-attribute :openbao, kind_of: [TrueClass, FalseClass], default: false
 attribute :virtual_ips, kind_of: Hash, default: {}
 attribute :virtual_ips_per_ip, kind_of: Hash, default: {}
 attribute :managers, kind_of: Array, default: []

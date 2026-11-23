@@ -10,7 +10,6 @@ action :add do
   begin
     user = new_resource.user
     vrrp_secrets = new_resource.vrrp_secrets
-    openbao = new_resource.openbao
     virtual_ips = new_resource.virtual_ips
     virtual_ips_per_ip = new_resource.virtual_ips_per_ip
     managers = new_resource.managers
@@ -131,61 +130,34 @@ action :add do
       end
     end
 
-    if openbao
-      openbao_secret_file 'keepalived-conf' do
-        source 'keepalived.conf.erb'
-        cookbook 'keepalived'
-        variables(
-          vrrp_password: vrrp_secrets['pass'],
-          managers: managers,
-          start_id: vrrp_secrets['start_id'],
-          balanced_services: balanced_services,
-          virtual_ips: virtual_ips,
-          virtual_ips_per_ip: virtual_ips_per_ip,
-          has_any_virtual_ip: has_any_virtual_ip,
-          manager_services: manager_services,
-          ipmgt: ipmgt,
-          iface: iface,
-          ipsync: ipaddress_sync,
-          managers_per_service: managers_per_service,
-          sync_iface_name: interface_for_ip(ipaddress_sync)
-        )
-        destination '/run/rb-secrets/keepalived/keepalived.conf'
-        owner 'root'
-        group 'root'
-        mode '0600'
-        unit 'keepalived'
-      end
+    openbao_secret_file 'keepalived-conf' do
+      source 'keepalived.conf.erb'
+      cookbook 'keepalived'
+      variables(
+        vrrp_password: vrrp_secrets['pass'],
+        managers: managers,
+        start_id: vrrp_secrets['start_id'],
+        balanced_services: balanced_services,
+        virtual_ips: virtual_ips,
+        virtual_ips_per_ip: virtual_ips_per_ip,
+        has_any_virtual_ip: has_any_virtual_ip,
+        manager_services: manager_services,
+        ipmgt: ipmgt,
+        iface: iface,
+        ipsync: ipaddress_sync,
+        managers_per_service: managers_per_service,
+        sync_iface_name: interface_for_ip(ipaddress_sync)
+      )
+      destination '/run/rb-secrets/keepalived/keepalived.conf'
+      owner 'root'
+      group 'root'
+      mode '0600'
+      unit 'keepalived'
+    end
 
-      link '/etc/keepalived/keepalived.conf' do
-        to '/run/rb-secrets/keepalived/keepalived.conf'
-        notifies :reload, 'service[keepalived]'
-      end
-    else
-      template '/etc/keepalived/keepalived.conf' do
-        cookbook 'keepalived'
-        source 'keepalived.conf.erb'
-        owner 'root'
-        group 'root'
-        mode '0644'
-        retries 2
-        notifies :reload, 'service[keepalived]'
-        variables(
-          vrrp_password: vrrp_secrets['pass'],
-          managers: managers,
-          start_id: vrrp_secrets['start_id'],
-          balanced_services: balanced_services,
-          virtual_ips: virtual_ips,
-          virtual_ips_per_ip: virtual_ips_per_ip,
-          has_any_virtual_ip: has_any_virtual_ip,
-          manager_services: manager_services,
-          ipmgt: ipmgt,
-          iface: iface,
-          ipsync: ipaddress_sync,
-          managers_per_service: managers_per_service,
-          sync_iface_name: interface_for_ip(ipaddress_sync)
-        )
-      end
+    link '/etc/keepalived/keepalived.conf' do
+      to '/run/rb-secrets/keepalived/keepalived.conf'
+      notifies :reload, 'service[keepalived]'
     end
 
     # LVS DR: the balanced VIPs are on lo:N, so the real servers must not answer ARP

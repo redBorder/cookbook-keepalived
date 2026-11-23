@@ -20,3 +20,4 @@ attribute :ipmgt, kind_of: String, default: '127.0.0.1'
 attribute :iface_management, kind_of: String, default: ''
 attribute :ipaddress_sync, kind_of: String, default: '127.0.0.1'
 attribute :managers_per_service, kind_of: Hash, default: {}
+attribute :unicast_config, kind_of: Hash, default: {}

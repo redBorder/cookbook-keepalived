@@ -5,3 +5,5 @@ maintainer_email 'dvanhoucke@redborder.com'
 license          'All rights reserved'
 description      'Installs/Configures cookbook-keepalived'
 version          '3.0.0'
+
+depends 'openbao'

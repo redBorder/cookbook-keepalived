@@ -131,14 +131,9 @@ action :add do
       end
     end
 
-    template '/etc/keepalived/keepalived.conf' do
-      cookbook 'keepalived'
+    openbao_secret_file 'keepalived-conf' do
       source 'keepalived.conf.erb'
-      owner 'root'
-      group 'root'
-      mode '0644'
-      retries 2
-      notifies :reload, 'service[keepalived]'
+      cookbook 'keepalived'
       variables(
         vrrp_password: vrrp_secrets['pass'],
         managers: managers,
@@ -155,6 +150,16 @@ action :add do
         unicast_config: unicast_config,
         sync_iface_name: interface_for_ip(ipaddress_sync)
       )
+      destination '/run/rb-secrets/keepalived/keepalived.conf'
+      owner 'root'
+      group 'root'
+      mode '0600'
+      unit 'keepalived'
+    end
+
+    link '/etc/keepalived/keepalived.conf' do
+      to '/run/rb-secrets/keepalived/keepalived.conf'
+      notifies :reload, 'service[keepalived]'
     end
 
     # LVS DR: the balanced VIPs are on lo:N, so the real servers must not answer ARP

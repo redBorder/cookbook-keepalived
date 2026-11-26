@@ -55,40 +55,12 @@ vrrp_instance vi_<%= ip %> {
     <% end %>
     advert_int 1
     nopreempt
-<% if !node["redborder"].nil? and !node["redborder"]["dmidecode"].nil? and !node["redborder"]["dmidecode"]["manufacturer"].nil? and node["redborder"]["dmidecode"]["manufacturer"].to_s.downcase == "xen" %>
-<% serviceonip=services.select{|x| x["enable"] and x["ip"]==ip}.map{|x| x["service"]}.sort.uniq 
-   managersunicy=nil
-   managerswithip=[] 
-   serviceonip.each do |x|
-     if !@managers_per_service[x].nil?
-       @managers_per_service[x].each do |m|
-         ipaddr=nil
-         if !m["network"].nil? and !m["network"]["interfaces"].nil? and !m["network"]["interfaces"][iface].nil?
-            unless m["network"]["interfaces"][iface]["addresses"].nil?
-               m["network"]["interfaces"][iface]["addresses"].each do |ipa, ip_prop|
-                  if ip_prop["family"]=="inet" and ipa!=ip
-                     ipaddr=ipa
-                     break
-                  end
-               end
-            end
-         end
-         if !ipaddr.nil?
-           if m.name!=node.name
-             managerswithip<<ipaddr if !managerswithip.include?(ipaddr)
-           else
-             managersunicy=ipaddr
-           end
-         end
-       end
-     end
-   end %>
-<% if managerswithip.size>0 and !managersunicy.nil? %>
-    unicast_src_ip <%= managersunicy %>
-<% end %>
+<% if @unicast_config && @unicast_config[ip] && !@unicast_config[ip]['src_ip'].to_s.empty? && @unicast_config[ip]['peers'].is_a?(Array) && @unicast_config[ip]['peers'].any? %>
+    # Direct peer-to-peer unicast (Bypasses multicast & IGMP snooping)
+    unicast_src_ip <%= @unicast_config[ip]['src_ip'] %>
     unicast_peer {
-<% managerswithip.each do |m| %>
-        <%= m %>
+<% @unicast_config[ip]['peers'].each do |peer| %>
+        <%= peer %>
 <% end %>
     }
 <% end %>

@@ -1,6 +1,13 @@
 cookbook-keepalived CHANGELOG
 ===============
 
+## 3.0.0
+
+  - Miguel Negrón
+    - [eb859a7] Merge pull request #24 from redBorder/improvement/#27039_split_brain_remediation
+  - David Vanhoucke
+    - [b774e48] introduce unicast and avoid empty postgresql.conf
+
 ## 2.0.0
 
   - manegron
